@@ -2,6 +2,8 @@ package main
 
 import (
 	"PullRequestService/internal/db"
+	"PullRequestService/internal/handler"
+	"PullRequestService/internal/repository"
 	"PullRequestService/pkg/config"
 	"PullRequestService/pkg/logger"
 	"context"
@@ -27,6 +29,12 @@ func main() {
 	}
 	defer db.Close()
 	port := config.GetString("PORT")
+
+	repo := repository.NewTeamRepository(db)
+	h := handler.NewTeamHandler(repo)
+	r.POST("/team/add", h.AddTeam)
+	r.GET("/team/get", h.GetTeam)
+
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      r,
