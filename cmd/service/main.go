@@ -1,7 +1,57 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"PullRequestService/internal/db"
+	"PullRequestService/pkg/config"
+	"PullRequestService/pkg/logger"
+	"context"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
-	_ = gin.Default()
+	log := logger.New()
+	r := gin.Default()
+	err := config.InitConfig()
+	if err != nil {
+		log.Error(err)
+	}
+	db := db.New()
+	if db == nil {
+		panic("Connection failed")
+	}
+	defer db.Close()
+	port := config.GetString("PORT")
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	go func() {
+		log.Infof("Server started on port %s", port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+	log.Info("Shutdown signal received")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Errorf("Server shutdown error: %v", err)
+	} else {
+		log.Info("Server stopped gracefully")
+	}
 }
