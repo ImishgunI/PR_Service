@@ -9,7 +9,7 @@ import (
 )
 
 type DataBase struct {
-	db  *pgxpool.Pool
+	Db  *pgxpool.Pool
 	log logger.Logger
 }
 
@@ -30,12 +30,12 @@ func New() *DataBase {
 		return nil
 	}
 	log.Info("Succesfully connect to the database\n")
-	return &DataBase{db: conn, log: log}
+	return &DataBase{Db: conn, log: log}
 }
 
 func (d *DataBase) Close() {
-	if d.db != nil {
-		d.db.Close()
+	if d.Db != nil {
+		d.Db.Close()
 		d.log.Info("Database connection closed")
 	}
 }
