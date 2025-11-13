@@ -40,6 +40,7 @@ func (p *PRRepository) CreatePR(ctx context.Context, pull_request_id, pull_reque
 			SELECT user_id
 			FROM users
 			WHERE team_name = $1 AND is_active = TRUE AND user_id <> $2
+			LIMIT 2
 		`, teamName, author_id)
 	if err != nil {
 		return nil, nil, fmt.Errorf("select candidates: %w", err)
