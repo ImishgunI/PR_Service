@@ -40,6 +40,7 @@ func main() {
 	r.GET("/team/get", h.GetTeam)
 	r.POST("/users/setIsActive", uh.SetActive)
 	r.POST("/pullRequest/create", ph.CreatePR)
+	r.POST("/pullRequest/merge", ph.MergePR)
 
 	server := &http.Server{
 		Addr:         ":" + port,
