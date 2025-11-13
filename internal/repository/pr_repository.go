@@ -160,3 +160,96 @@ func (p *PRRepository) UpdateStatus(ctx context.Context, prID string) (*models.P
 
 	return &pr, nil
 }
+
+func (p *PRRepository) ReassignPR(ctx context.Context, prID, old_user_id string) (*models.PullRequest, string, error) {
+	var pr models.PullRequest
+
+	err := p.db.Db.QueryRow(ctx, `
+			SELECT pull_request_id, pull_request_name, author_id, status, need_more_reviewers, created_at, merged_at
+			FROM pull_requests
+			WHERE pull_request_id = $1
+		`, prID).Scan(
+		&pr.PullRequestID, &pr.PullRequestName, &pr.AuthorID, &pr.Status, &pr.NeedMore, &pr.CreatedAt, &pr.MergedAt)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, "", errors.New("PR_NOT_FOUND")
+		}
+		return nil, "", err
+	}
+
+	if pr.Status == "MERGED" {
+		return nil, "", errors.New("PR_MERGED")
+	}
+
+	var exists bool
+	err = p.db.Db.QueryRow(ctx, `
+			SELECT EXISTS(
+				SELECT 1 FROM pr_reviewers WHERE pull_request_id=$1 AND reviewer_id=$2
+			)
+		`, prID, old_user_id).Scan(&exists)
+	if err != nil {
+		return nil, "", err
+	}
+	if !exists {
+		return nil, "", errors.New("NOT_ASSIGNED")
+	}
+
+	var teamName string
+	err = p.db.Db.QueryRow(ctx, `
+			SELECT team_name FROM users WHERE user_id=$1
+		`, old_user_id).Scan(&teamName)
+	if err != nil {
+		return nil, "", err
+	}
+
+	rows, err := p.db.Db.Query(ctx, `
+			SELECT user_id FROM users
+			WHERE team_name=$1 AND is_active=true AND user_id<>ALL(
+				SELECT reviewer_id FROM pr_reviewers WHERE pull_request_id=$2
+			)
+			ORDER BY RANDOM()
+			LIMIT 1
+		`, teamName, prID)
+	if err != nil {
+		return nil, "", err
+	}
+	defer rows.Close()
+
+	var newUserID string
+	if rows.Next() {
+		if err := rows.Scan(&newUserID); err != nil {
+			return nil, "", err
+		}
+	} else {
+		return nil, "", errors.New("NO_CANDIDATE")
+	}
+
+	_, err = p.db.Db.Exec(ctx, `
+			UPDATE pr_reviewers
+			SET reviewer_id=$1
+			WHERE pull_request_id=$2 AND reviewer_id=$3
+		`, newUserID, prID, old_user_id)
+	if err != nil {
+		return nil, "", err
+	}
+
+	reviewers := []string{}
+	rRows, err := p.db.Db.Query(ctx, `
+			SELECT reviewer_id FROM pr_reviewers WHERE pull_request_id=$1
+		`, prID)
+	if err != nil {
+		return nil, "", err
+	}
+	defer rRows.Close()
+	for rRows.Next() {
+		var r string
+		if err := rRows.Scan(&r); err != nil {
+			return nil, "", err
+		}
+		reviewers = append(reviewers, r)
+	}
+	pr.AssignedReviewers = reviewers
+
+	return &pr, newUserID, nil
+}
