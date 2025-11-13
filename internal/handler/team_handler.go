@@ -45,7 +45,7 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 		return
 	}
 
-	team, err := h.repo.GetTeam(c, name)
+	team, err := h.repo.GetTeam(c.Request.Context(), name)
 	if err != nil {
 		if err.Error() == "NOT_FOUND" {
 			c.JSON(http.StatusNotFound, gin.H{
