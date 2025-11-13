@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type PRRepository struct {
@@ -119,4 +121,42 @@ func selectRandomReviewers(users []string, n int) []string {
 
 func randSource() *rand.Rand {
 	return rand.New(rand.NewSource(time.Now().UnixNano()))
+}
+
+func (p *PRRepository) UpdateStatus(ctx context.Context, prID string) (*models.PullRequest, error) {
+	var pr models.PullRequest
+	err := p.db.Db.QueryRow(ctx, `
+		UPDATE pull_requests
+		SET status = 'MERGED', merged_at = COALESCE(merged_at, NOW())
+		WHERE pull_request_id = $1
+		RETURNING pull_request_id, pull_request_name, author_id, status, need_more_reviewers, created_at, merged_at`, prID).
+		Scan(&pr.PullRequestID, &pr.PullRequestName, &pr.AuthorID, &pr.Status, &pr.NeedMore, &pr.CreatedAt, &pr.MergedAt)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, errors.New("NOT_FOUND")
+		}
+		return nil, err
+	}
+
+	rows, err := p.db.Db.Query(ctx, `
+			SELECT reviewer_id
+			FROM pr_reviewers
+			WHERE pull_request_id = $1
+		`, prID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	reviewers := []string{}
+	for rows.Next() {
+		var r string
+		if err := rows.Scan(&r); err != nil {
+			return nil, err
+		}
+		reviewers = append(reviewers, r)
+	}
+	pr.AssignedReviewers = reviewers
+
+	return &pr, nil
 }
