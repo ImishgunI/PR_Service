@@ -30,10 +30,16 @@ func main() {
 	defer db.Close()
 	port := config.GetString("PORT")
 
-	repo := repository.NewTeamRepository(db)
-	h := handler.NewTeamHandler(repo)
+	rt := repository.NewTeamRepository(db)
+	ru := repository.NewUserHandler(db)
+	h := handler.NewTeamHandler(rt)
+	uh := handler.NewUserHandler(ru)
+	pr := repository.NewPRRepository(db)
+	ph := handler.NewPRHandler(pr)
 	r.POST("/team/add", h.AddTeam)
 	r.GET("/team/get", h.GetTeam)
+	r.POST("/users/setIsActive", uh.SetActive)
+	r.POST("/pullRequest/create", ph.CreatePR)
 
 	server := &http.Server{
 		Addr:         ":" + port,
