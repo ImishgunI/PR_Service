@@ -1,0 +1,84 @@
+package handler
+
+import (
+	"PullRequestService/internal/repository"
+	"context"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+type PRHandler struct {
+	rp *repository.PRRepository
+}
+
+type CreatePRRequest struct {
+	PullRequestID   string `json:"pull_request_id" binding:"required"`
+	PullRequestName string `json:"pull_request_name" binding:"required"`
+	AuthorID        string `json:"author_id" binding:"required"`
+}
+
+func NewPRHandler(repo *repository.PRRepository) *PRHandler {
+	return &PRHandler{
+		rp: repo,
+	}
+}
+
+func (h *PRHandler) CreatePR(c *gin.Context) {
+	var req CreatePRRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    "INVALID_BODY",
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	pr, reviewers, err := h.rp.CreatePR(ctx, req.PullRequestID, req.PullRequestName, req.AuthorID)
+	if err != nil {
+		switch err.Error() {
+		case "PR_EXISTS":
+			c.JSON(http.StatusConflict, gin.H{
+				"error": gin.H{
+					"code":    "PR_EXISTS",
+					"message": "PR id already exists",
+				},
+			})
+			return
+		case "AUTHOR_NOT_FOUND":
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": gin.H{
+					"code":    "NOT_FOUND",
+					"message": "author or team not found",
+				},
+			})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{
+					"code":    "INTERNAL_ERROR",
+					"message": err.Error(),
+				},
+			})
+			return
+		}
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"pr": gin.H{
+			"pull_request_id":    pr.PullRequestID,
+			"pull_request_name":  pr.PullRequestName,
+			"author_id":          pr.AuthorID,
+			"status":             pr.Status,
+			"assigned_reviewers": reviewers,
+			"needMoreReviewers":  pr.NeedMore,
+			"createdAt":          pr.CreatedAt.Format(time.RFC3339),
+		},
+	})
+}
