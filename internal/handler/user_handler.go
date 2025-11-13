@@ -45,3 +45,26 @@ func (u *UserHandler) SetActive(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"user": user})
 }
+
+func (h *UserHandler) GetReview(c *gin.Context) {
+	userID := c.Query("user_id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{"code": "INVALID_PARAM", "message": "user_id is required"},
+		})
+		return
+	}
+
+	prs, err := h.repo.GetReview(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user_id":       userID,
+		"pull_requests": prs,
+	})
+}
