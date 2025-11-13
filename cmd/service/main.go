@@ -41,6 +41,8 @@ func main() {
 	r.POST("/users/setIsActive", uh.SetActive)
 	r.POST("/pullRequest/create", ph.CreatePR)
 	r.POST("/pullRequest/merge", ph.MergePR)
+	r.POST("/pullRequest/reassign", ph.ReassignPR)
+	r.GET("/users/getReview", uh.GetReview)
 
 	server := &http.Server{
 		Addr:         ":" + port,
