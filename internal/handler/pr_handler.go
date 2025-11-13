@@ -110,3 +110,36 @@ func (h *PRHandler) MergePR(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"pr": pr})
 }
+
+func (h *PRHandler) ReassignPR(c *gin.Context) {
+	var req struct {
+		PullRequestID string `json:"pull_request_id" binding:"required"`
+		OldReviewerID string `json:"old_user_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_BODY", "message": err.Error()}})
+		return
+	}
+
+	pr, newUserID, err := h.rp.ReassignPR(c.Request.Context(), req.PullRequestID, req.OldReviewerID)
+	if err != nil {
+		switch err.Error() {
+		case "PR_NOT_FOUND":
+			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "PR not found"}})
+		case "PR_MERGED":
+			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "PR_MERGED", "message": "cannot reassign on merged PR"}})
+		case "NOT_ASSIGNED":
+			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "NOT_ASSIGNED", "message": "reviewer is not assigned to this PR"}})
+		case "NO_CANDIDATE":
+			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "NO_CANDIDATE", "message": "no active replacement candidate in team"}})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"pr":          pr,
+		"replaced_by": newUserID,
+	})
+}
