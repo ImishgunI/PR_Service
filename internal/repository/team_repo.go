@@ -59,9 +59,9 @@ func (r *TeamRepository) CreateTeam(ctx context.Context, team models.Team) error
 
 func (r *TeamRepository) GetTeam(ctx context.Context, name string) (*models.Team, error) {
 	rows, err := r.pool.Db.Query(ctx, `
-		SELECT u.user_id, u.username, u.is_active
-		FROM users u
-		WHERE u.team_name = $1`, name)
+		SELECT user_id, username, is_active
+		FROM users
+		WHERE team_name = $1`, name)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +77,7 @@ func (r *TeamRepository) GetTeam(ctx context.Context, name string) (*models.Team
 	}
 
 	if len(members) == 0 {
+		r.log.Error("Length of members slice equal 0")
 		return nil, errors.New("NOT_FOUND")
 	}
 
