@@ -27,7 +27,6 @@ func (u *UserHandler) SetActive(c *gin.Context) {
 		})
 		return
 	}
-
 	ctx := c.Request.Context()
 	user, err := u.repo.SetIsActive(ctx, req.UserId, req.IsActive)
 	if err != nil {
