@@ -3,7 +3,6 @@ package repository
 import (
 	"PullRequestService/internal/db"
 	"PullRequestService/internal/models"
-	"PullRequestService/pkg/logger"
 	"context"
 	"errors"
 )
@@ -15,12 +14,10 @@ type TeamsRepository interface {
 
 type TeamRepository struct {
 	pool *db.DataBase
-	log  logger.Logger
 }
 
 func NewTeamRepository(db *db.DataBase) *TeamRepository {
-	log := logger.New()
-	return &TeamRepository{pool: db, log: log}
+	return &TeamRepository{pool: db}
 }
 
 func (r *TeamRepository) CreateTeam(ctx context.Context, team models.Team) error {
@@ -38,7 +35,6 @@ func (r *TeamRepository) CreateTeam(ctx context.Context, team models.Team) error
 	if existTeam {
 		return errors.New("TEAM_EXISTS")
 	}
-	r.log.Info("Team does not exist")
 	_, err = tx.Exec(ctx, "INSERT INTO teams (team_name) VALUES ($1)", team.TeamName)
 	if err != nil {
 		return err
@@ -58,7 +54,6 @@ func (r *TeamRepository) CreateTeam(ctx context.Context, team models.Team) error
 	if err = tx.Commit(ctx); err != nil {
 		return err
 	}
-	r.log.Info("Successfully created team")
 	return nil
 }
 
@@ -82,7 +77,6 @@ func (r *TeamRepository) GetTeam(ctx context.Context, name string) (*models.Team
 	}
 
 	if len(members) == 0 {
-		r.log.Error("Length of members slice equal 0")
 		return nil, errors.New("NOT_FOUND")
 	}
 
