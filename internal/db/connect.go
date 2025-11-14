@@ -15,10 +15,7 @@ type DataBase struct {
 
 func New() *DataBase {
 	log := logger.New()
-	err := config.InitConfig()
-	if err != nil {
-		log.Error(err)
-	}
+	config.InitConfig()
 	conn, err := pgxpool.New(context.Background(), config.GetString("DATABASE_URL"))
 	if err != nil {
 		log.Errorf("Connection to the database failed: %v\n", err)
