@@ -17,12 +17,10 @@ import (
 )
 
 func main() {
+	gin.SetMode("release")
 	log := logger.New()
 	r := gin.Default()
-	err := config.InitConfig()
-	if err != nil {
-		log.Error(err)
-	}
+	config.InitConfig()
 	db := db.New()
 	if db == nil {
 		panic("Connection failed")
