@@ -23,7 +23,8 @@ func main() {
 	config.InitConfig()
 	db := db.New()
 	if db == nil {
-		panic("Connection failed")
+		log.Warn("Object db equal nil")
+		panic("DataBase connection failed")
 	}
 	defer db.Close()
 	port := config.GetString("PORT")
