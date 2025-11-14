@@ -27,3 +27,12 @@ func (h *StatHandler) GetReviewerStats(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"reviewer_stats": stats})
 }
+
+func (h *StatHandler) GetPullRequestStats(c *gin.Context) {
+	stats, err := h.repo.GetPRStats(c.Request.Context())
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to get stats"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"pull_request_stats": stats})
+}
