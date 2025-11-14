@@ -2,8 +2,7 @@ package main
 
 import (
 	"PullRequestService/internal/db"
-	"PullRequestService/internal/handler"
-	"PullRequestService/internal/repository"
+	"PullRequestService/internal/routes"
 	"PullRequestService/pkg/config"
 	"PullRequestService/pkg/logger"
 	"context"
@@ -29,19 +28,7 @@ func main() {
 	defer db.Close()
 	port := config.GetString("PORT")
 
-	rt := repository.NewTeamRepository(db)
-	ru := repository.NewUserHandler(db)
-	h := handler.NewTeamHandler(rt)
-	uh := handler.NewUserHandler(ru)
-	pr := repository.NewPRRepository(db)
-	ph := handler.NewPRHandler(pr)
-	r.POST("/team/add", h.AddTeam)
-	r.GET("/team/get", h.GetTeam)
-	r.POST("/users/setIsActive", uh.SetActive)
-	r.POST("/pullRequest/create", ph.CreatePR)
-	r.POST("/pullRequest/merge", ph.MergePR)
-	r.POST("/pullRequest/reassign", ph.ReassignPR)
-	r.GET("/users/getReview", uh.GetReview)
+	routes.SetRoutes(r, db)
 
 	server := &http.Server{
 		Addr:         ":" + port,
