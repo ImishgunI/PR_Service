@@ -5,6 +5,9 @@ import (
 	"PullRequestService/internal/models"
 	"context"
 	"errors"
+	"log"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type TeamsRepository interface {
@@ -25,7 +28,11 @@ func (r *TeamRepository) CreateTeam(ctx context.Context, team models.Team) error
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
+			log.Printf("rollback error: %v", err)
+		}
+	}()
 
 	var existTeam bool
 	err = tx.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM teams WHERE team_name=$1)", team.TeamName).Scan(&existTeam)

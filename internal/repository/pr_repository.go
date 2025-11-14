@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -72,7 +73,11 @@ func (p *PRRepository) CreatePR(ctx context.Context, pull_request_id, pull_reque
 	if err != nil {
 		return nil, nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
+			log.Printf("rollback error: %v", err)
+		}
+	}()
 
 	_, err = tx.Exec(ctx, `
 			INSERT INTO pull_requests
