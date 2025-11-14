@@ -1,0 +1,37 @@
+version: "2"
+
+run:
+  timeout: 3m
+
+linters:
+  enable:
+    - govet
+    - revive
+    - errcheck
+    - staticcheck
+    - ineffassign
+    - gocyclo
+    - unparam
+    - unused
+  settings:
+    gocyclo:
+      min-complexity: 15
+    revive:
+      severity: warning
+      rules:
+        - name: indent-error-flow
+        - name: error-naming
+        - name: unused-parameter
+
+formatters:
+  enable:
+    - gofmt
+
+issues:
+  max-issues-per-linter: 0
+
+  max-same-issues: 0
+
+  new: false
+
+  fix: false
