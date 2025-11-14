@@ -55,3 +55,17 @@ make docker-build
 ```bash
 make lint
 ```
+
+### Дополнительные endpoints:
+
+#### 1. Получает статистику: сколько раз каждого пользователя назначали ревьюером:
+
+```JSON
+GET /stats/reviewers
+```
+
+#### 2. Получает статистику: количество назначенных ревьюеров для каждого pull request
+
+```JSON
+GET /stats/pull_request
+```
