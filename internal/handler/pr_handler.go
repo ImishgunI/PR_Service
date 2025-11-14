@@ -58,7 +58,7 @@ func (h *PRHandler) CreatePR(c *gin.Context) {
 				},
 			})
 			return
-		case "AUTHOR_NOT_FOUND":
+		case "NOT_FOUND":
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": gin.H{
 					"code":    "NOT_FOUND",
@@ -67,7 +67,7 @@ func (h *PRHandler) CreatePR(c *gin.Context) {
 			})
 			return
 		default:
-			h.log.Error(err)
+			h.log.Errorf("Failed to create pr: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": gin.H{
 					"code":    "INTERNAL_ERROR",
@@ -110,7 +110,7 @@ func (h *PRHandler) MergePR(c *gin.Context) {
 			})
 			return
 		}
-		h.log.Error(err)
+		h.log.Errorf("Failed to update status on merge: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
 		})
@@ -142,7 +142,7 @@ func (h *PRHandler) ReassignPR(c *gin.Context) {
 		case "NO_CANDIDATE":
 			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "NO_CANDIDATE", "message": "no active replacement candidate in team"}})
 		default:
-			h.log.Error(err)
+			h.log.Errorf("Failed to reassign pull request to another user: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		}
 		return

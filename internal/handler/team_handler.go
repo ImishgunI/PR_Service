@@ -39,8 +39,8 @@ func (h *TeamHandler) AddTeam(c *gin.Context) {
 			})
 			return
 		}
+		h.log.Errorf("Failed to create team: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		h.log.Error(err)
 		return
 	}
 
@@ -62,8 +62,8 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 			})
 			return
 		}
+		h.log.Errorf("Failed to get team: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		h.log.Error(err)
 		return
 	}
 

@@ -44,7 +44,7 @@ func (u *UserHandler) SetActive(c *gin.Context) {
 			})
 			return
 		}
-		u.log.Error(err)
+		u.log.Errorf("Failed to set activity for user: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
 		})
@@ -65,7 +65,7 @@ func (u *UserHandler) GetReview(c *gin.Context) {
 
 	prs, err := u.repo.GetReview(c.Request.Context(), userID)
 	if err != nil {
-		u.log.Error(err)
+		u.log.Errorf("Failed to get revirew: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
 		})
