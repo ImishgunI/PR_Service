@@ -25,4 +25,5 @@ func SetRoutes(r *gin.Engine, db *db.DataBase) {
 	r.POST("/pullRequest/reassign", ph.ReassignPR)
 	r.GET("/users/getReview", uh.GetReview)
 	r.GET("/stats/reviewers", sh.GetReviewerStats)
+	r.GET("/stats/pull_request", sh.GetPullRequestStats)
 }
