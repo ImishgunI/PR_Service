@@ -7,6 +7,11 @@ import (
 	"errors"
 )
 
+type UsersRepository interface {
+	SetIsActive(ctx context.Context, userID string, isActive bool) (*models.User, error)
+	GetReview(ctx context.Context, userID string) ([]models.PullRequestShort, error)
+}
+
 type UserRepository struct {
 	db *db.DataBase
 }

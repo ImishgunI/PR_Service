@@ -12,6 +12,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+type PullRequestRepository interface {
+	CreatePR(ctx context.Context, pull_request_id, pull_request_name, author_id string) (*models.PullRequest, []string, error)
+	UpdateStatus(ctx context.Context, prID string) (*models.PullRequest, error)
+	ReassignPR(ctx context.Context, prID, old_user_id string) (*models.PullRequest, string, error)
+}
+
 type PRRepository struct {
 	db *db.DataBase
 }

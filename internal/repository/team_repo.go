@@ -8,6 +8,11 @@ import (
 	"errors"
 )
 
+type TeamsRepository interface {
+	CreateTeam(ctx context.Context, team models.Team) error
+	GetTeam(ctx context.Context, name string) (*models.Team, error)
+}
+
 type TeamRepository struct {
 	pool *db.DataBase
 	log  logger.Logger
