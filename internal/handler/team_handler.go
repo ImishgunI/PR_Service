@@ -8,6 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type TeamService interface {
+	AddTeam(c *gin.Context)
+	GetTeam(c *gin.Context)
+}
+
 type TeamHandler struct {
 	repo *repository.TeamRepository
 }

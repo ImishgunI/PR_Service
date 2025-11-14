@@ -7,6 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type UserService interface {
+	SetActive(c *gin.Context)
+	GetReview(c *gin.Context)
+}
+
 type UserHandler struct {
 	repo *repository.UserRepository
 }

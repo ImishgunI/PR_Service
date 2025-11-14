@@ -9,6 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type PullRequestService interface {
+	CreatePR(c *gin.Context)
+	MergePR(c *gin.Context)
+	ReassignPR(c *gin.Context)
+}
+
 type PRHandler struct {
 	rp *repository.PRRepository
 }
