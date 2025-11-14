@@ -28,3 +28,6 @@ test:
 
 lint:
 	golangci-lint run
+
+clean:
+	rm -f pr_review_service
