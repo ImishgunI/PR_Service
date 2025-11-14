@@ -2,6 +2,7 @@ package handler
 
 import (
 	"PullRequestService/internal/repository"
+	"PullRequestService/pkg/logger"
 	"context"
 	"net/http"
 	"time"
@@ -16,7 +17,8 @@ type PullRequestService interface {
 }
 
 type PRHandler struct {
-	rp *repository.PRRepository
+	rp  *repository.PRRepository
+	log logger.Logger
 }
 
 type CreatePRRequest struct {
@@ -26,9 +28,8 @@ type CreatePRRequest struct {
 }
 
 func NewPRHandler(repo *repository.PRRepository) *PRHandler {
-	return &PRHandler{
-		rp: repo,
-	}
+	log := logger.New()
+	return &PRHandler{rp: repo, log: log}
 }
 
 func (h *PRHandler) CreatePR(c *gin.Context) {
@@ -66,6 +67,7 @@ func (h *PRHandler) CreatePR(c *gin.Context) {
 			})
 			return
 		default:
+			h.log.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": gin.H{
 					"code":    "INTERNAL_ERROR",
@@ -108,6 +110,7 @@ func (h *PRHandler) MergePR(c *gin.Context) {
 			})
 			return
 		}
+		h.log.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
 		})
@@ -130,7 +133,7 @@ func (h *PRHandler) ReassignPR(c *gin.Context) {
 	pr, newUserID, err := h.rp.ReassignPR(c.Request.Context(), req.PullRequestID, req.OldReviewerID)
 	if err != nil {
 		switch err.Error() {
-		case "PR_NOT_FOUND":
+		case "NOT_FOUND":
 			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "PR not found"}})
 		case "PR_MERGED":
 			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "PR_MERGED", "message": "cannot reassign on merged PR"}})
@@ -139,6 +142,7 @@ func (h *PRHandler) ReassignPR(c *gin.Context) {
 		case "NO_CANDIDATE":
 			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "NO_CANDIDATE", "message": "no active replacement candidate in team"}})
 		default:
+			h.log.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		}
 		return

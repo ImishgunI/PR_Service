@@ -2,6 +2,7 @@ package handler
 
 import (
 	"PullRequestService/internal/repository"
+	"PullRequestService/pkg/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,10 +15,12 @@ type UserService interface {
 
 type UserHandler struct {
 	repo *repository.UserRepository
+	log  logger.Logger
 }
 
 func NewUserHandler(repo *repository.UserRepository) *UserHandler {
-	return &UserHandler{repo: repo}
+	log := logger.New()
+	return &UserHandler{repo: repo, log: log}
 }
 
 func (u *UserHandler) SetActive(c *gin.Context) {
@@ -35,12 +38,13 @@ func (u *UserHandler) SetActive(c *gin.Context) {
 	ctx := c.Request.Context()
 	user, err := u.repo.SetIsActive(ctx, req.UserId, req.IsActive)
 	if err != nil {
-		if err.Error() == "user_not_found" {
+		if err.Error() == "NOT_FOUND" {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": gin.H{"code": "NOT_FOUND", "message": "user not found"},
 			})
 			return
 		}
+		u.log.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
 		})
@@ -50,7 +54,7 @@ func (u *UserHandler) SetActive(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"user": user})
 }
 
-func (h *UserHandler) GetReview(c *gin.Context) {
+func (u *UserHandler) GetReview(c *gin.Context) {
 	userID := c.Query("user_id")
 	if userID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -59,8 +63,9 @@ func (h *UserHandler) GetReview(c *gin.Context) {
 		return
 	}
 
-	prs, err := h.repo.GetReview(c.Request.Context(), userID)
+	prs, err := u.repo.GetReview(c.Request.Context(), userID)
 	if err != nil {
+		u.log.Error(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()},
 		})

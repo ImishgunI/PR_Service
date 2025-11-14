@@ -3,6 +3,7 @@ package handler
 import (
 	"PullRequestService/internal/models"
 	"PullRequestService/internal/repository"
+	"PullRequestService/pkg/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,10 +16,12 @@ type TeamService interface {
 
 type TeamHandler struct {
 	repo *repository.TeamRepository
+	log  logger.Logger
 }
 
 func NewTeamHandler(repo *repository.TeamRepository) *TeamHandler {
-	return &TeamHandler{repo: repo}
+	log := logger.New()
+	return &TeamHandler{repo: repo, log: log}
 }
 
 func (h *TeamHandler) AddTeam(c *gin.Context) {
@@ -37,6 +40,7 @@ func (h *TeamHandler) AddTeam(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		h.log.Error(err)
 		return
 	}
 
@@ -59,6 +63,7 @@ func (h *TeamHandler) GetTeam(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		h.log.Error(err)
 		return
 	}
 
