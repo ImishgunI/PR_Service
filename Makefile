@@ -13,8 +13,5 @@ down:
 logs:
 	docker-compose logs -f app
 
-test:
-	go test ./... -v
-
 lint:
 	golangci-lint run ./...
